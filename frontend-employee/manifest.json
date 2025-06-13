@@ -1,0 +1,8 @@
+{
+  "name": "App Empleados",
+  "short_name": "Ordenes",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "description": "Aplicación para crear listas de pedidos"
+}
