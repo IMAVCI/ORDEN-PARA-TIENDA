@@ -51,4 +51,7 @@ La base de datos SQLite se crea automáticamente al iniciar el backend (`databas
 Las rutas principales de la API están definidas en `backend/server.js` y permiten gestionar
 productos, proveedores y usuarios.
 
-Cada frontend es un proyecto de Vite con Tailwind CSS listo para extender.
+Cada frontend es un proyecto de Vite con Tailwind CSS listo para extender. El
+panel de administración cuenta con vistas básicas para gestionar productos,
+proveedores y usuarios. La app móvil permite iniciar sesión, seleccionar
+cantidades y generar un resumen de orden agrupado por proveedor.
