@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Ancla: ubicación fija</title>
+<style>
+  :root {
+    /* Carta náutica de día: agua somera, hoja, tierra, tinta y el magenta de las marcas */
+    --agua: #d6e8f2;
+    --hoja: #ffffff;
+    --tierra: #f0e2b0;
+    --tinta: #12233f;
+    --tinta-suave: #44566e;
+    --marca: #a8106f;
+    --sobre-marca: #ffffff;
+    --linea: #8fb4cb;
+    color-scheme: light dark;
+    accent-color: var(--marca);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* La misma carta con luz de noche */
+      --agua: #0d1b2c;
+      --hoja: #15273d;
+      --tierra: #2e2b1b;
+      --tinta: #e2ecf4;
+      --tinta-suave: #a3b6c8;
+      --marca: #f285cb;
+      --sobre-marca: #2b0a20;
+      --linea: #35536f;
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--agua);
+    color: var(--tinta);
+    font: 1rem/1.55 "Avenir Next", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  main {
+    max-width: 64rem;
+    margin-inline: auto;
+    padding: clamp(1.25rem, 5vw, 3.5rem) 1rem 4rem;
+  }
+
+  h1, h2, h3, p, dl, dd, ol, ul { margin: 0; }
+
+  h1 {
+    font-size: clamp(2.5rem, 8vw, 4.75rem);
+    line-height: 0.95;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+  h2 {
+    font-size: clamp(1.4rem, 3.4vw, 1.9rem);
+    line-height: 1.15;
+    font-weight: 750;
+    letter-spacing: -0.015em;
+  }
+  h3 { font-size: 1.05rem; line-height: 1.3; }
+
+  p, li { max-width: 68ch; }
+  a { color: var(--marca); text-underline-offset: 0.18em; }
+
+  :focus-visible {
+    outline: 3px solid var(--marca);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Portada ---------- */
+  .portada {
+    display: grid;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: center;
+  }
+  @media (min-width: 50rem) {
+    .portada { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+  }
+  .entrada {
+    margin-top: 1.25rem;
+    font-size: 1.15rem;
+    line-height: 1.5;
+    color: var(--tinta-suave);
+    max-width: 44ch;
+  }
+
+  .carta {
+    display: block;
+    width: 100%;
+    max-width: 24rem;
+    height: auto;
+    justify-self: center;
+    background: var(--hoja);
+    border: 1.5px solid var(--tinta);
+    outline: 1px solid var(--tinta);
+    outline-offset: 5px;
+    margin: 6px;
+  }
+  .carta .veril { fill: none; stroke: var(--linea); stroke-width: 1.2; }
+  .carta .somero { fill: var(--agua); stroke: var(--linea); stroke-width: 1.2; }
+  .carta .costa { fill: var(--tierra); stroke: var(--tinta); stroke-width: 1.4; }
+  .carta .sonda {
+    fill: var(--tinta-suave);
+    font: italic 11px Georgia, "Times New Roman", serif;
+  }
+  .carta .boya { color: var(--marca); }
+  .carta .boya * { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+  .carta .boya .punto { fill: currentColor; stroke: none; }
+  .carta .boya .cerco { stroke-width: 1.4; }
+
+  /* Sin anclar, la marca deriva y se dibuja a trazos. Anclada, se queda quieta. */
+  body:not([data-anclado]) .boya * { stroke-dasharray: 3 5; }
+  body:not([data-anclado]) .boya .punto { opacity: 0.35; }
+  @media (prefers-reduced-motion: no-preference) {
+    body:not([data-anclado]) .boya { animation: deriva 11s ease-in-out infinite; }
+  }
+  @keyframes deriva {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(34px, -18px); }
+    45% { transform: translate(12px, 30px); }
+    70% { transform: translate(-36px, 8px); }
+    85% { transform: translate(-14px, -26px); }
+  }
+
+  /* ---------- Lectura en vivo ---------- */
+  .lectura {
+    margin-top: 1.75rem;
+    padding: 1rem 1.25rem 1.1rem;
+    background: var(--hoja);
+    border-left: 5px solid var(--linea);
+    max-width: 34rem;
+  }
+  body[data-anclado] .lectura { border-left-color: var(--marca); }
+  .estado { font-weight: 700; font-size: 1.05rem; }
+  .lectura dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem 1.5rem;
+    margin-top: 0.85rem;
+  }
+  .lectura dt { font-size: 0.85rem; color: var(--tinta-suave); }
+  .lectura dd {
+    font-size: clamp(1.25rem, 4.2vw, 1.6rem);
+    font-weight: 700;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+  .lectura .nota { margin-top: 0.85rem; font-size: 0.92rem; color: var(--tinta-suave); }
+  [hidden] { display: none !important; }
+
+  /* ---------- Pasos ---------- */
+  .paso {
+    margin-top: clamp(2.5rem, 7vw, 4.5rem);
+    padding-top: 1.5rem;
+    border-top: 1.5px solid var(--tinta);
+  }
+  .paso > p { margin-top: 0.6rem; color: var(--tinta-suave); }
+
+  .campos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 0.9rem 1rem;
+    margin-top: 1.25rem;
+    max-width: 40rem;
+  }
+  label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.3rem; }
+  input[type="text"], textarea {
+    width: 100%;
+    font: inherit;
+    color: var(--tinta);
+    background: var(--hoja);
+    border: 1.5px solid var(--tinta-suave);
+    border-radius: 4px;
+    padding: 0.6rem 0.7rem;
+  }
+  input[type="text"] { min-height: 2.9rem; font-variant-numeric: tabular-nums; }
+  textarea {
+    display: block;
+    resize: vertical;
+    background: var(--tierra);
+    border-color: var(--tinta);
+    font: 0.82rem/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    overflow-wrap: anywhere;
+  }
+
+  .acciones { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 1.1rem; }
+  button, .marcador {
+    font: inherit;
+    font-weight: 650;
+    min-height: 2.9rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 4px;
+    border: 1.5px solid var(--tinta);
+    background: transparent;
+    color: var(--tinta);
+    cursor: pointer;
+  }
+  button.principal, .marcador {
+    background: var(--marca);
+    border-color: var(--marca);
+    color: var(--sobre-marca);
+  }
+  .marcador { display: inline-flex; align-items: center; text-decoration: none; cursor: grab; }
+  button:hover { filter: brightness(1.08); }
+
+  .aviso { margin-top: 0.9rem; font-weight: 600; min-height: 1.5em; }
+  .aviso:empty { min-height: 0; margin-top: 0; }
+
+  /* ---------- Vías ---------- */
+  details {
+    margin-top: 1rem;
+    background: var(--hoja);
+    border: 1.5px solid var(--tinta);
+  }
+  details:first-of-type { margin-top: 1.5rem; }
+  summary {
+    cursor: pointer;
+    padding: 0.95rem 1.1rem;
+    font-weight: 700;
+    font-size: 1.05rem;
+    line-height: 1.3;
+  }
+  summary span { display: block; font-weight: 400; font-size: 0.92rem; color: var(--tinta-suave); margin-top: 0.15rem; }
+  .cuerpo { padding: 0.25rem 1.1rem 1.25rem; }
+  .cuerpo > * + * { margin-top: 0.9rem; }
+  .cuerpo ol { padding-left: 1.3rem; }
+  .cuerpo li + li { margin-top: 0.4rem; }
+  .coords { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .copy { position: relative; display: inline-flex; align-items: center; gap: 0.6rem; }
+  .tip { font-size: 0.9rem; font-weight: 600; opacity: 0; transition: opacity 0.15s; }
+  .copy button[data-copied] + .tip, .copy button[data-failed] + .tip { opacity: 1; }
+
+  .limites { margin-top: 2rem; padding: 1.1rem 1.25rem; background: var(--tierra); border: 1.5px solid var(--tinta); }
+  .limites ul { padding-left: 1.2rem; margin-top: 0.5rem; }
+  .limites li + li { margin-top: 0.35rem; }
+</style>
+</head>
+<body>
+<main>
+
+  <header class="portada">
+    <div>
+      <h1>Deja tu ubicación quieta</h1>
+      <p class="entrada">Elige un punto. Las webs donde actives el ancla recibirán siempre ese punto, con velocidad cero, aunque tú sigas en movimiento.</p>
+
+      <div class="lectura" aria-live="polite">
+        <p class="estado" id="estado">Sin anclar. Elige un punto abajo.</p>
+        <dl id="datos" hidden>
+          <div><dt>Latitud</dt><dd id="d-lat">–</dd></div>
+          <div><dt>Longitud</dt><dd id="d-lon">–</dd></div>
+          <div><dt>Velocidad</dt><dd id="d-vel">0 m/s</dd></div>
+          <div><dt>Lecturas entregadas</dt><dd id="d-num">0</dd></div>
+        </dl>
+        <p class="nota" id="nota-real" hidden></p>
+        <p class="nota" id="nota-mapa" hidden><a id="enlace-mapa" href="#" target="_blank" rel="noopener noreferrer">Ver este punto en OpenStreetMap</a></p>
+      </div>
+    </div>
+
+    <svg class="carta" viewBox="0 0 320 320" role="img" aria-label="Carta con la marca de tu ubicación: deriva mientras no hay punto anclado y se queda quieta al anclar.">
+      <ellipse class="somero" cx="150" cy="172" rx="150" ry="122" transform="rotate(-18 150 172)"/>
+      <ellipse class="veril" cx="156" cy="168" rx="112" ry="88" transform="rotate(-14 156 168)"/>
+      <ellipse class="veril" cx="160" cy="164" rx="74" ry="56" transform="rotate(-8 160 164)"/>
+      <path class="costa" d="M320 0 H196 C204 22 232 26 246 46 C258 64 252 86 274 96 C292 104 306 98 320 110 Z"/>
+      <path class="costa" d="M0 320 V262 C18 258 30 272 44 284 C58 296 62 310 78 320 Z"/>
+      <text class="sonda" x="38" y="66">24</text>
+      <text class="sonda" x="96" y="116">12</text>
+      <text class="sonda" x="212" y="150">7</text>
+      <text class="sonda" x="112" y="232">9</text>
+      <text class="sonda" x="236" y="262">18</text>
+      <text class="sonda" x="268" y="196">31</text>
+      <g transform="translate(160 164)">
+        <g class="boya">
+          <circle class="cerco" r="30"/>
+          <circle r="3.6" cy="-15"/>
+          <path d="M0 -11 V16 M-8 -4 H8 M-13 6 Q-11 17 0 17 Q11 17 13 6"/>
+          <circle class="punto" r="2.6" cy="2"/>
+        </g>
+      </g>
+    </svg>
+  </header>
+
+  <section class="paso" aria-labelledby="t-punto">
+    <h2 id="t-punto">1. Elige el punto</h2>
+    <p>Usa el lugar donde estás ahora o escribe las coordenadas. Puedes pegar las dos juntas, por ejemplo copiadas de un mapa.</p>
+
+    <div class="acciones">
+      <button type="button" class="principal" id="b-aqui">Anclar donde estoy ahora</button>
+    </div>
+
+    <form id="f-punto" novalidate>
+      <div class="campos">
+        <div>
+          <label for="i-lat">Latitud</label>
+          <input type="text" id="i-lat" autocomplete="off" spellcheck="false" placeholder="19.43260">
+        </div>
+        <div>
+          <label for="i-lon">Longitud</label>
+          <input type="text" id="i-lon" autocomplete="off" spellcheck="false" placeholder="-99.13320">
+        </div>
+        <div>
+          <label for="i-acc">Precisión en metros</label>
+          <input type="text" id="i-acc" autocomplete="off" spellcheck="false" inputmode="numeric" value="20">
+        </div>
+      </div>
+      <div class="acciones">
+        <button type="submit">Anclar estas coordenadas</button>
+        <button type="button" id="b-soltar" hidden>Soltar ancla</button>
+      </div>
+    </form>
+    <p class="aviso" id="aviso" role="status"></p>
+  </section>
+
+  <section class="paso" aria-labelledby="t-llevar">
+    <h2 id="t-llevar">2. Llévalo a las webs que quieras</h2>
+    <p>Una página no puede cambiar lo que el navegador entrega a otras páginas. Por eso el ancla viaja contigo de una de estas tres formas. El código de abajo ya lleva tu punto.</p>
+
+    <details name="via" open>
+      <summary>Marcador <span>Cualquier navegador, móvil u ordenador. Lo pulsas en cada página.</span></summary>
+      <div class="cuerpo">
+        <p><strong>En ordenador:</strong> arrastra este botón a tu barra de marcadores.</p>
+        <p><a class="marcador" id="a-marcador" href="#">Anclar ubicación</a></p>
+        <p><strong>En móvil:</strong> guarda cualquier página como marcador, edítalo y pega este código en el campo de la dirección.</p>
+        <textarea id="c-marcador" rows="4" readonly aria-label="Código del marcador"></textarea>
+        <p class="copy">
+          <button type="button" command="--copy" commandfor="c-marcador">Copiar marcador</button>
+          <span class="tip" role="status"></span>
+        </p>
+        <p>Abre la web y pulsa el marcador antes de que te pida la ubicación. Si recargas la página, púlsalo otra vez. En Chrome para Android se lanza escribiendo su nombre en la barra de direcciones.</p>
+      </div>
+    </details>
+
+    <details name="via">
+      <summary>Script permanente <span>Se activa solo en cada visita. Necesita una extensión de scripts.</span></summary>
+      <div class="cuerpo">
+        <ol>
+          <li>Instala Tampermonkey o Violentmonkey. En Android funcionan con Firefox; en iPhone, con la app Userscripts para Safari.</li>
+          <li>Crea un script nuevo, borra lo que traiga y pega este.</li>
+        </ol>
+        <div>
+          <label for="i-dominio">Solo en esta web (opcional)</label>
+          <input type="text" id="i-dominio" autocomplete="off" spellcheck="false" placeholder="ejemplo.com" style="max-width: 22rem">
+        </div>
+        <textarea id="c-script" rows="9" readonly aria-label="Código del script"></textarea>
+        <p class="copy">
+          <button type="button" command="--copy" commandfor="c-script">Copiar script</button>
+          <span class="tip" role="status"></span>
+        </p>
+      </div>
+    </details>
+
+    <details name="via">
+      <summary>Sin instalar nada <span>Chrome o Edge en ordenador, mientras tengas abiertas las herramientas.</span></summary>
+      <div class="cuerpo">
+        <ol>
+          <li>En la web que quieras, pulsa F12.</li>
+          <li>Abre el menú de tres puntos, <em>Más herramientas</em>, <em>Sensores</em>.</li>
+          <li>En <em>Ubicación</em> elige <em>Otra…</em> y escribe tu punto: <span class="coords" id="c-coords">primero ancla un punto</span></li>
+        </ol>
+        <p class="copy">
+          <button type="button" command="--copy" commandfor="c-coords">Copiar coordenadas</button>
+          <span class="tip" role="status"></span>
+        </p>
+      </div>
+    </details>
+
+    <div class="limites">
+      <h3>Lo que el ancla no cambia</h3>
+      <ul>
+        <li>Las apps instaladas en el móvil: leen el GPS del sistema, no el del navegador. En Android eso se hace con una app de «ubicación simulada» desde las opciones de desarrollador.</li>
+        <li>La ubicación aproximada que una web deduce de tu dirección IP.</li>
+        <li>Una web que ya estaba siguiendo tu posición antes de activar el ancla. Actívala primero.</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  /* Esta función es el ancla. Se usa aquí mismo y se copia tal cual al marcador
+     y al script, así que no puede depender de nada de fuera. */
+  function instalar(lat, lon, acc) {
+    var G = window.Geolocation && window.Geolocation.prototype;
+    if (!G) { return false; }
+    var e = window.__ancla;
+    if (!e) {
+      e = window.__ancla = {
+        orig: { get: G.getCurrentPosition, watch: G.watchPosition, clear: G.clearWatch },
+        timers: {},
+        n: 900000
+      };
+    }
+    e.p = { lat: lat, lon: lon, acc: acc };
+    function lectura() {
+      return {
+        coords: {
+          latitude: e.p.lat, longitude: e.p.lon, accuracy: e.p.acc,
+          altitude: null, altitudeAccuracy: null, heading: NaN, speed: 0
+        },
+        timestamp: Date.now()
+      };
+    }
+    G.getCurrentPosition = function (ok) {
+      if (typeof ok === 'function') { setTimeout(function () { ok(lectura()); }, 0); }
+    };
+    G.watchPosition = function (ok) {
+      var id = ++e.n;
+      if (typeof ok === 'function') {
+        e.timers[id] = setInterval(function () { ok(lectura()); }, 2000);
+        setTimeout(function () { if (e.timers[id]) { ok(lectura()); } }, 0);
+      }
+      return id;
+    };
+    G.clearWatch = function (id) {
+      if (e.timers[id]) { clearInterval(e.timers[id]); delete e.timers[id]; }
+      else { e.orig.clear.call(this, id); }
+    };
+    return true;
+  }
+
+  const $ = (id) => document.getElementById(id);
+  const CLAVE = 'ancla.punto';
+  const geo = navigator.geolocation || null;
+  const REAL = window.Geolocation ? {
+    get: Geolocation.prototype.getCurrentPosition,
+    watch: Geolocation.prototype.watchPosition,
+    clear: Geolocation.prototype.clearWatch
+  } : null;
+
+  let punto = null;
+  let vigia = null;
+  let vigiaReal = null;
+  let lecturas = 0;
+
+  const guardar = (p) => { try { p ? localStorage.setItem(CLAVE, JSON.stringify(p)) : localStorage.removeItem(CLAVE); } catch {} };
+  const recuperar = () => { try { return JSON.parse(localStorage.getItem(CLAVE)); } catch { return null; } };
+
+  const grados = (v, pos, neg) => `${Math.abs(v).toFixed(5)}° ${v >= 0 ? pos : neg}`;
+  const num = (v) => Number(v.toFixed(6));
+
+  function distancia(a, b) {
+    const R = 6371000, rad = Math.PI / 180;
+    const dLat = (b.lat - a.lat) * rad, dLon = (b.lon - a.lon) * rad;
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+
+  /* ---------- Código para llevar ---------- */
+  const compacta = (fn) => fn.toString().replace(/\n\s*/g, ' ');
+
+  function generar() {
+    const marcador = $('a-marcador'), cMarcador = $('c-marcador'), cScript = $('c-script'), cCoords = $('c-coords');
+    if (!punto) {
+      marcador.setAttribute('href', '#');
+      cMarcador.value = '';
+      cScript.value = '';
+      cCoords.textContent = 'primero ancla un punto';
+      return;
+    }
+    const args = `${num(punto.lat)}, ${num(punto.lon)}, ${punto.acc}`;
+    const aviso = "var d=document.createElement('div');d.textContent=ok?'Ubicación anclada':'Aquí no se puede anclar';" +
+      "d.style.cssText='position:fixed;z-index:2147483647;left:50%;bottom:24px;transform:translateX(-50%);background:#12233f;color:#fff;font:600 14px system-ui,sans-serif;padding:10px 16px;border-radius:6px';" +
+      "document.documentElement.appendChild(d);setTimeout(function(){d.remove();},2500);";
+    const url = 'javascript:' + encodeURIComponent(`(function(){var ok=(${compacta(instalar)})(${args});${aviso}})();`);
+    marcador.setAttribute('href', url);
+    cMarcador.value = url;
+
+    const dominio = $('i-dominio').value.trim().toLowerCase().replace(/^[a-z]+:\/\//, '').replace(/^www\./, '').split('/')[0];
+    const valido = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(dominio);
+    const donde = valido
+      ? [`// @match        *://${dominio}/*`, `// @match        *://*.${dominio}/*`]
+      : ['// @match        *://*/*'];
+    cScript.value = [
+      '// ==UserScript==',
+      '// @name         Ancla: ubicación fija',
+      '// @description  Entrega siempre el mismo punto, sin movimiento, a las webs que piden la ubicación.',
+      ...donde,
+      '// @run-at       document-start',
+      '// @grant        none',
+      '// ==/UserScript==',
+      '',
+      `(${instalar.toString()})(${args});`,
+      ''
+    ].join('\n');
+    cCoords.textContent = `${num(punto.lat)}, ${num(punto.lon)}`;
+  }
+
+  /* ---------- Lectura en vivo ---------- */
+  function pintar(p) {
+    $('d-lat').textContent = grados(p.coords.latitude, 'N', 'S');
+    $('d-lon').textContent = grados(p.coords.longitude, 'E', 'O');
+    $('d-vel').textContent = `${p.coords.speed} m/s`;
+    $('d-num').textContent = String(lecturas);
+  }
+
+  function pintarReal(p) {
+    const nota = $('nota-real');
+    if (!punto) { nota.hidden = true; return; }
+    const m = distancia(punto, { lat: p.coords.latitude, lon: p.coords.longitude });
+    const lejos = m >= 1000 ? `${(m / 1000).toFixed(2)} km` : `${Math.round(m)} m`;
+    nota.textContent = `Tu posición real está ahora a ${lejos} del punto anclado. Esta página sigue recibiendo el punto, a 0 m/s.`;
+    nota.hidden = false;
+  }
+
+  function seguirReal() {
+    if (!geo || !REAL || vigiaReal !== null) return;
+    vigiaReal = REAL.watch.call(geo, pintarReal, () => {}, { enableHighAccuracy: true, maximumAge: 0 });
+  }
+
+  function parar() {
+    if (geo && vigia !== null) { geo.clearWatch(vigia); vigia = null; }
+  }
+
+  function anclar(lat, lon, acc) {
+    parar();
+    punto = { lat, lon, acc };
+    guardar(punto);
+    lecturas = 0;
+    document.body.dataset.anclado = '';
+    $('estado').textContent = 'Anclado. Esto es lo que recibe esta página:';
+    $('datos').hidden = false;
+    $('b-soltar').hidden = false;
+    $('i-lat').value = String(num(lat));
+    $('i-lon').value = String(num(lon));
+    $('i-acc').value = String(acc);
+    $('enlace-mapa').href = `https://www.openstreetmap.org/?mlat=${num(lat)}&mlon=${num(lon)}#map=17/${num(lat)}/${num(lon)}`;
+    $('nota-mapa').hidden = false;
+
+    const quieta = { coords: { latitude: lat, longitude: lon, speed: 0 } };
+    pintar(quieta);
+    if (geo && instalar(lat, lon, acc)) {
+      vigia = geo.watchPosition((p) => { lecturas += 1; pintar(p); });
+    }
+    generar();
+  }
+
+  function soltar() {
+    parar();
+    if (geo && REAL && vigiaReal !== null) { REAL.clear.call(geo, vigiaReal); vigiaReal = null; }
+    const e = window.__ancla;
+    if (e && REAL) {
+      Object.values(e.timers).forEach(clearInterval);
+      Geolocation.prototype.getCurrentPosition = REAL.get;
+      Geolocation.prototype.watchPosition = REAL.watch;
+      Geolocation.prototype.clearWatch = REAL.clear;
+      delete window.__ancla;
+    }
+    punto = null;
+    guardar(null);
+    delete document.body.dataset.anclado;
+    $('estado').textContent = 'Sin anclar. Elige un punto abajo.';
+    $('datos').hidden = true;
+    $('nota-real').hidden = true;
+    $('nota-mapa').hidden = true;
+    $('b-soltar').hidden = true;
+    $('aviso').textContent = 'Ancla soltada. Esta página vuelve a recibir tu ubicación real.';
+    generar();
+  }
+
+  /* ---------- Paso 1 ---------- */
+  const leer = (texto) => {
+    const t = texto.trim().replace(/\s+/g, '');
+    const limpio = (t.match(/,/g) || []).length === 1 && !t.includes('.') ? t.replace(',', '.') : t;
+    return limpio === '' ? NaN : Number(limpio);
+  };
+
+  $('b-aqui').addEventListener('click', () => {
+    const aviso = $('aviso');
+    if (!geo || !REAL) {
+      aviso.textContent = 'Este navegador no ofrece ubicación en esta página. Escribe las coordenadas a mano.';
+      return;
+    }
+    aviso.textContent = 'Buscando tu ubicación…';
+    REAL.get.call(geo, (p) => {
+      aviso.textContent = '';
+      anclar(p.coords.latitude, p.coords.longitude, Math.max(1, Math.round(p.coords.accuracy || 20)));
+      seguirReal();
+    }, (err) => {
+      aviso.textContent = err.code === 1
+        ? 'El navegador no dio permiso de ubicación. Actívalo para esta página o escribe las coordenadas a mano.'
+        : 'No se pudo obtener tu ubicación. Inténtalo de nuevo o escribe las coordenadas a mano.';
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+  });
+
+  $('f-punto').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const aviso = $('aviso');
+    const lat = leer($('i-lat').value), lon = leer($('i-lon').value);
+    let acc = leer($('i-acc').value);
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+      aviso.textContent = 'La latitud es un número entre -90 y 90.';
+      $('i-lat').focus();
+      return;
+    }
+    if (!Number.isFinite(lon) || lon < -180 || lon > 180) {
+      aviso.textContent = 'La longitud es un número entre -180 y 180.';
+      $('i-lon').focus();
+      return;
+    }
+    if (!Number.isFinite(acc) || acc <= 0) acc = 20;
+    aviso.textContent = '';
+    anclar(lat, lon, Math.round(acc));
+  });
+
+  /* Pegar "19.4326, -99.1332" en cualquiera de los dos campos reparte los valores. */
+  for (const id of ['i-lat', 'i-lon']) {
+    $(id).addEventListener('paste', (ev) => {
+      const texto = (ev.clipboardData || window.clipboardData).getData('text');
+      const par = texto.match(/(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)/);
+      if (!par) return;
+      ev.preventDefault();
+      $('i-lat').value = par[1];
+      $('i-lon').value = par[2];
+    });
+  }
+
+  $('b-soltar').addEventListener('click', soltar);
+  $('i-dominio').addEventListener('input', generar);
+  $('a-marcador').addEventListener('click', (ev) => {
+    if (!punto) {
+      ev.preventDefault();
+      $('aviso').textContent = 'Primero ancla un punto en el paso 1.';
+    }
+  });
+
+  /* ---------- Copiar ---------- */
+  const relojes = new WeakMap();
+  let ultimo = '';
+
+  function avisarCopia(boton, bien) {
+    const tip = boton.nextElementSibling;
+    clearTimeout(relojes.get(boton));
+    boton.removeAttribute('data-copied');
+    boton.removeAttribute('data-failed');
+    let mensaje = bien ? 'Copiado' : 'No se pudo copiar';
+    if (mensaje === ultimo) mensaje += ' ';
+    ultimo = mensaje;
+    tip.textContent = '';
+    boton.setAttribute(bien ? 'data-copied' : 'data-failed', '');
+    requestAnimationFrame(() => { tip.textContent = mensaje; });
+    relojes.set(boton, setTimeout(() => {
+      boton.removeAttribute('data-copied');
+      boton.removeAttribute('data-failed');
+      tip.textContent = '';
+    }, 2000));
+  }
+
+  /* Solo para cuando la página se abre como archivo o por http, sin portapapeles moderno. */
+  function copiaAntigua(texto) {
+    const campo = Object.assign(document.createElement('textarea'), { value: texto });
+    campo.setAttribute('readonly', '');
+    campo.style.cssText = 'position:fixed;inset-block-start:0;opacity:0';
+    document.body.append(campo);
+    campo.select();
+    try { return document.execCommand('copy'); } finally { campo.remove(); }
+  }
+
+  async function copiar(boton, destino) {
+    const texto = destino.matches('input, textarea') ? destino.value : destino.innerText.trim();
+    if (!punto || !texto) {
+      $('aviso').textContent = 'Primero ancla un punto en el paso 1.';
+      avisarCopia(boton, false);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(texto);
+      avisarCopia(boton, true);
+    } catch {
+      avisarCopia(boton, copiaAntigua(texto));
+    }
+  }
+
+  if ('CommandEvent' in window) {
+    document.addEventListener('command', (ev) => {
+      if (ev.command === '--copy') copiar(ev.source, ev.target);
+    }, true);
+  } else {
+    document.addEventListener('click', (ev) => {
+      const boton = ev.target.closest('button[command="--copy"]');
+      if (!boton) return;
+      const destino = $(boton.getAttribute('commandfor'));
+      if (destino) copiar(boton, destino);
+    });
+  }
+
+  /* ---------- Arranque ---------- */
+  const previo = recuperar();
+  if (previo && Number.isFinite(previo.lat) && Number.isFinite(previo.lon)) {
+    anclar(previo.lat, previo.lon, Number.isFinite(previo.acc) ? previo.acc : 20);
+  } else {
+    generar();
+  }
+})();
+</script>
+</body>
+</html>
